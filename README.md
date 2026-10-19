@@ -33,6 +33,35 @@ The Neovim half does nothing outside Rex (`$REX_SESSION` unset), so it can sit b
 vim-tmux-navigator. Inside Rex it maps the keys on `VimEnter`, so it overrides other
 plugins' `ctrl-hjkl` mappings, including vim-tmux-navigator's. Set `$REX_BIN_PATH` if `rex` is not on Neovim's `PATH`.
 
+### Share Neovim's managed copy with Rex
+
+Instead of cloning the plugin into Rex's config directory, Rex can load the copy
+installed by your Neovim plugin manager. This keeps both halves on the same version
+and lets the plugin manager update them together.
+
+For Neovim 0.12+ with `vim.pack`, add this to your Neovim config:
+
+```lua
+vim.pack.add({ "https://github.com/paul-enz/vim-rex-navigator" })
+```
+
+Start Neovim and let it install the plugin first. Then use this in Rex instead of
+the `require("vim-rex-navigator").setup()` line above:
+
+```lua
+-- ~/.config/rex/init.lua
+local data_home = os.getenv("XDG_DATA_HOME") or os.getenv("HOME") .. "/.local/share"
+local navigator = data_home .. "/nvim/site/pack/core/opt/vim-rex-navigator/init.lua"
+dofile(navigator).setup()
+```
+
+This path assumes Neovim's default app name and data directory on macOS or Linux.
+For another plugin manager or a custom Neovim data directory, point `dofile` at the
+plugin's root `init.lua` in that manager's installation directory.
+
+Run `rex config reload` after configuring Rex and after updating the plugin.
+Removing the Neovim-managed copy will also break Rex's reference to it.
+
 ## Limitations
 
 - Editor detection reads the pane's foreground process, so nvim over `ssh` or behind a
