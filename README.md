@@ -18,10 +18,17 @@ git clone https://github.com/paul-enz/vim-rex-navigator ~/.config/rex/vim-rex-na
 
 ```lua
 -- ~/.config/rex/init.lua
-require("vim-rex-navigator").setup()
+do
+  local ok, navigator = pcall(require, "vim-rex-navigator")
+  if ok then navigator.setup() end
+end
 ```
 
 Reload with `rex config reload`.
+
+Keep the `pcall`: Rex skips a bad `rex.*` call but stops loading `init.lua` at a Lua
+error, so if the plugin is ever missing, an unguarded `require` would take every binding
+after it with it. Guarded, only the navigator keys go.
 
 Neovim (lazy.nvim):
 
@@ -46,21 +53,24 @@ vim.pack.add({ "https://github.com/paul-enz/vim-rex-navigator" })
 ```
 
 Start Neovim and let it install the plugin first. Then use this in Rex instead of
-the `require("vim-rex-navigator").setup()` line above:
+the `require` block above:
 
 ```lua
 -- ~/.config/rex/init.lua
-local data_home = os.getenv("XDG_DATA_HOME") or os.getenv("HOME") .. "/.local/share"
-local navigator = data_home .. "/nvim/site/pack/core/opt/vim-rex-navigator/init.lua"
-dofile(navigator).setup()
+do
+  local data_home = os.getenv("XDG_DATA_HOME") or os.getenv("HOME") .. "/.local/share"
+  local path = data_home .. "/nvim/site/pack/core/opt/vim-rex-navigator/init.lua"
+  local ok, navigator = pcall(dofile, path)
+  if ok then navigator.setup() end
+end
 ```
 
 This path assumes Neovim's default app name and data directory on macOS or Linux.
 For another plugin manager or a custom Neovim data directory, point `dofile` at the
 plugin's root `init.lua` in that manager's installation directory.
 
-Run `rex config reload` after configuring Rex and after updating the plugin.
-Removing the Neovim-managed copy will also break Rex's reference to it.
+Run `rex config reload` after configuring Rex and after updating the plugin. If the
+Neovim-managed copy is removed, the guarded `dofile` loses only the navigator keys.
 
 ## Limitations
 
